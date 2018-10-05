@@ -34,7 +34,7 @@ if 1:
 
         # Define some rules regarding the inputs and how they map to information needed by this process
         if domain_type == "global":
-            grid_definition_file = "/badc/cmip5/metadata/processing/ancillary/regrid/ll1deg_grid.nc"
+            grid_definition_file = "./grid_files/ll1deg_grid.nc"
             grid_short_name = "1-deg"
             output_dir = os.path.join(output_base_dir, "1_deg")
         else:

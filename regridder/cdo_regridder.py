@@ -11,7 +11,7 @@ import tempfile
 import numpy
 
 
-from lib.mock_drs import MockDRS
+from regridder.mock_drs import MockDRS
 import cdms2 as cdms
 
 

@@ -1,0 +1,14 @@
+# conda env create -f environment.yml
+name: cdo_regrid
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - six
+  - cdo
+  - python-cdo
+  - numpy
+  - netcdf4
+# tests
+  - pytest
+  - flake8

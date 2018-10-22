@@ -2,38 +2,34 @@
 import time
 import re
 import os
-import subprocess
 import shutil
 import shlex
 import tempfile
 
-# Third-party imports
-import numpy
+from cdo import Cdo
+cdo = Cdo()
 
+from nco import Nco
+nco = Nco()
 
 from regridder.mock_drs import MockDRS
 import cdms2 as cdms
 
-
-# Define CDO path
-cdo_path = "cdo"
+import logging
+LOGGER = logging.getLogger('REGRIDDER')
 
 
 def _validate_input_grid(input_file):
 
     tmp_file = tempfile.mktemp()
-    cmd = "%s timmean -seltimestep,1 %s %s" % (cdo_path, input_file, tmp_file)
-
-    # Run the CDO process
-    proc = subprocess.Popen(shlex.split(cmd), stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=os.environ)
-    retvals = proc.communicate()
-    outputs = {"stdout": retvals[0], "stderr": retvals[1], "returncode": proc.returncode}
+    # cmd = "%s timmean -seltimestep,1 %s %s" % (cdo_path, input_file, tmp_file)
+    cdo.timmean(input=input_file, output=tmp_file)
 
     # Analyse the output for the error "generic" meaning that cdo does not recognise the grid which may mean
     # that the file contains no fields, just a time series
-    if outputs["stderr"].replace("\n", "").find("generic") > -1:
-        raise Exception(
-            "No spatial grid in this dataset or not recognised grid. Please check the grid in the dataset.")
+    # if outputs["stderr"].replace("\n", "").find("generic") > -1:
+    #    raise Exception(
+    #        "No spatial grid in this dataset or not recognised grid. Please check the grid in the dataset.")
 
 
 def regrid(input_file, domain_type, output_base_dir='OUT'):
@@ -60,90 +56,42 @@ def regrid(input_file, domain_type, output_base_dir='OUT'):
 
     # We will need to select the main variable using the "select" operator piped into the CDO operator
     var_id = os.path.basename(input_file).split("_")[0]
-
-    if domain_type == "global":
-        operation = "setgridtype,lonlat -remapbil,%s -select,name=%s" % (grid_definition_file, var_id)
-    else:
-        operation = "remapbil,%s -select,name=%s" % (grid_definition_file, var_id)
+    options = "-b F64"
 
     # Get the variable (in external file) that contains the grid cell area variable
     cell_areas_file = _getGridCellAreaVariable(var_id, input_file)
 
     if cell_areas_file:
-        operation += " -setgridarea,%s" % cell_areas_file
-
-    options = ("-b F64",)
-    outputs = _cdoWrapper(operation, [input_file], output_file)
+        # operation += " -setgridarea,%s" % cell_areas_file
+        cdo.setgridarea(cell_areas_file, input=input_file, output='/tmp/out_gridarea.nc')
+        input_file = '/tmp/out_gridarea.nc'
+    cdo.select('name={}'.format(var_id), input=input_file, output='/tmp/out_select.nc', options=options)
+    if domain_type == "global":
+        cdo.remapbil(grid_definition_file, input='/tmp/out_select.nc', output='/tmp/out_remap.nc', options=options)
+        cdo.setgridtype(input='/tmp/out_remap.nc', output=output_file, options=options)
+    else:
+        cdo.remapbil(grid_definition_file, input='/tmp/out_select.nc', output=output_file, options=options)
 
     validate_regridded_file(output_file, domain_type)
 
     if domain_type == "regional":
         # Convert to NetCDF 3
         tmp_file = output_file[:-3] + "-tmp.nc"
-        os.system("ncks -3 %s %s" % (output_file, tmp_file))
-        os.system("mv %s %s" % (tmp_file, output_file))
+        nco.ncks(input=output_file, output=tmp_file, options=['-3'])
+        shutil.move(tmp_file, output_file)
         print("Converted to NetCDF3 file: %s" % output_file)
 
     return output_file
 
 
 def validate_regridded_file(input_file, domain_type):
-    outputs = _cdoWrapper("sinfo", [input_file], "")
+    sinfo = cdo.sinfo(input=input_file)
 
     if domain_type == "global":
-        if not outputs["stdout"].find("points=64800 (360x180)") > -1:
-            raise Exception("Output grid not correct for: %s" % input_file)
+        if "points=64800 (360x180)" not in sinfo:
+            raise Exception("Output grid not correct for: {}".format(input_file))
     else:
         print("NOT CHECKING OUTPUT GRID for REGIONAL DATA")
-
-
-def _cdoWrapper(operation, input_files, output_file, options=None):
-    """
-    Constructs a CDO command and runs it.
-
-        $ cdo [<options>] <operation> <input_files> <output_file>
-
-    """
-    opts_string = ""
-    if options is not None:
-        opts_string = " ".join(options)
-
-    if type(input_files) == str:
-        input_files = [input_files]
-
-    input_files_string = " ".join(input_files)
-
-    cmd = "%s %s %s %s %s" % (cdo_path, opts_string, operation, input_files_string, output_file)
-    print ("Running CDO command: %s" % cmd)
-
-    start_time = time.time()
-
-    # Set required Environment Variables for CDO
-    os.environ["CDO_PCTL_NBINS"] = "1001"
-
-    # Run the process
-    proc = subprocess.Popen(shlex.split(cmd),
-                            stderr=subprocess.PIPE,
-                            stdout=subprocess.PIPE,
-                            env=os.environ)
-
-    # Get the return values
-    retvals = proc.communicate()
-
-    end_time = time.time()
-
-    # Define a dictionary of outputs
-    output = {"stdout": retvals[0],
-              "stderr": retvals[1],
-              "returncode": proc.returncode}
-
-    print("CDO Outputs: stdout='{}'; stderr='{}'; return code='{}'".format(
-        output["stdout"],
-        output["stderr"],
-        output["returncode"]))
-
-    return_code = output["returncode"]
-    return output
 
 
 def _mapToDRS(file_path):
@@ -161,7 +109,7 @@ def _getGridCellAreaVariable(var_id, path):
 
     Returns None if cannot find file.
     """
-    print "PATH:", path
+    LOGGER.debug("Path: {}".format(path))
     f = cdms.open(path)
     if var_id not in f.listvariables():
         raise Exception("Cannot find variable '%s' in file '%s'." % (var_id, path))

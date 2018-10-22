@@ -19,19 +19,6 @@ import logging
 LOGGER = logging.getLogger('REGRIDDER')
 
 
-def _validate_input_grid(input_file):
-
-    tmp_file = tempfile.mktemp()
-    # cmd = "%s timmean -seltimestep,1 %s %s" % (cdo_path, input_file, tmp_file)
-    cdo.timmean(input=input_file, output=tmp_file)
-
-    # Analyse the output for the error "generic" meaning that cdo does not recognise the grid which may mean
-    # that the file contains no fields, just a time series
-    # if outputs["stderr"].replace("\n", "").find("generic") > -1:
-    #    raise Exception(
-    #        "No spatial grid in this dataset or not recognised grid. Please check the grid in the dataset.")
-
-
 def regrid(input_file, domain_type, output_base_dir='OUT'):
     # Define some rules regarding the inputs and how they map to information needed by this process
     if domain_type == "global":
@@ -48,7 +35,7 @@ def regrid(input_file, domain_type, output_base_dir='OUT'):
         os.makedirs(output_dir)
 
     # Validate input grid first - check CDO can manage it
-    _validate_input_grid(input_file)
+    validate_input_grid(input_file)
 
     # Determine output file name
     output_file_name = os.path.split(input_file)[1]
@@ -82,6 +69,17 @@ def regrid(input_file, domain_type, output_base_dir='OUT'):
         print("Converted to NetCDF3 file: %s" % output_file)
 
     return output_file
+
+
+def validate_input_grid(input_file):
+    _, tmp_file = tempfile.mkstemp()
+    cdo.timmean(input="-seltimestep,1 {}".format(input_file), output=tmp_file)
+
+    # Analyse the output for the error "generic" meaning that cdo does not recognise the grid which may mean
+    # that the file contains no fields, just a time series
+    # if outputs["stderr"].replace("\n", "").find("generic") > -1:
+    #    raise Exception(
+    #        "No spatial grid in this dataset or not recognised grid. Please check the grid in the dataset.")
 
 
 def validate_regridded_file(input_file, domain_type):

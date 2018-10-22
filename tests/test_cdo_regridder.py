@@ -2,7 +2,7 @@ import pytest
 
 from regridder import cdo_regridder as regridder
 
-from .common import CMIP5_NC, CORDEX_NC
+from .common import CMIP5_NC, CORDEX_NC, ARCHIVE_BASE
 
 
 def test_validate_input_grid():
@@ -14,9 +14,8 @@ def test_validate_regridded_file():
     # regridder.validate_regridded_file(CMIP5_NC, 'global')
 
 
-@pytest.mark.skip(reason='not working')
-def test_map_to_drs():
-    assert regridder.map_to_drs(CORDEX_NC) is not None
+def test_map_to_drs_cmip5():
+    assert regridder.map_to_drs(CMIP5_NC, archive_base=ARCHIVE_BASE) is not None
 
 
 @pytest.mark.skip(reason='not working')

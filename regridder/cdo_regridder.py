@@ -93,11 +93,11 @@ def validate_regridded_file(input_file, domain_type):
         LOGGER.warn("NOT CHECKING OUTPUT GRID for REGIONAL DATA")
 
 
-def map_to_drs(file_path):
+def map_to_drs(file_path, archive_base):
     """
     Maps a file to a MockDRS object - which is returned.
     """
-    return MockDRS(file_path)
+    return MockDRS(file_path, archive_base=archive_base)
 
 
 def get_grid_cell_area_variable(var_id, path):

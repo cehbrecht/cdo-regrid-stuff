@@ -92,12 +92,11 @@ def validate_regridded_file(input_file, domain_type):
         LOGGER.warn("NOT CHECKING OUTPUT GRID for REGIONAL DATA")
 
 
-def _mapToDRS(file_path):
+def map_to_drs(file_path):
     """
     Maps a file to a MockDRS object - which is returned.
     """
-    mdrs = MockDRS(file_path)
-    return mdrs
+    return MockDRS(file_path)
 
 
 def _getGridCellAreaVariable(var_id, path):
@@ -122,7 +121,7 @@ def _getGridCellAreaVariable(var_id, path):
         print("Could not locate grid cell area file for '%s' in file '%s'." % (var_id, path))
         return None
 
-    d = _mapToDRS(path)
+    d = map_to_drs(path)
     cell_areas_file = os.path.join(
         d.ARCHIVE_BASE, d.activity, d.product, d.institute,
         d.model, d.experiment, "fx", d.modeling_realm, "fx", "r0i0p0",

@@ -12,8 +12,13 @@ def test_mock_drs_cmip5():
     m = MockDRS(TEST_NC)
     for i in m.asIter():
         print(i)
-    m = MockDRS(TEST_NC)
-    print(m.asDict())
+    m2 = MockDRS(TEST_NC)
+    print(m2.asDict())
+
+
+def test_mock_drs_cmip5_archive_base():
+    m2 = MockDRS(CMIP5_NC, archive_base='/opt/data')
+    print(m2.asDict())
 
 
 @pytest.mark.skip(reason='can not handle fx')

@@ -12,27 +12,28 @@ import logging
 
 log = logging.getLogger('REGRIDDER')
 
+DEFAULT_ARCHIVE_BASE = "/badc/cmip5/data"
+
 
 class MockDRS(object):
     "A simple object to hold a DRS structure mapping."
 
     __slots__ = ["activity", "product", "institute", "model", "experiment", "frequency",
                  "modeling_realm", "MIP_table", "ensemble_member", "version_number", "variable_name",
-                 "time_range", "extension"]
+                 "time_range", "extension", "_archive_base"]
 
-    ARCHIVE_BASE = "/badc/cmip5/data"
-
-    def __init__(self, fpath):
+    def __init__(self, fpath, archive_base=None):
+        self._archive_base = archive_base or DEFAULT_ARCHIVE_BASE
         log.info("Analysing DRS from: %s" % fpath)
         self._interpret(fpath)
 
     def _interpret(self, fpath):
         (dr, fn) = os.path.split(fpath)
-        allowed = self.__slots__[:-1]
+        allowed = self.__slots__[:-2]
 
         # Get from archive DRS strcture and filename if found
-        if fpath.find(self.ARCHIVE_BASE) == 0:
-            items = dr.replace(self.ARCHIVE_BASE, "").strip("/").split("/")
+        if fpath.find(self._archive_base) == 0:
+            items = dr.replace(self._archive_base, "").strip("/").split("/")
 
             if len(items) != len(allowed) - 1:
                 raise Exception("Incorrect number of items in analysed DRS: required are: {}; Found are: {}".format(

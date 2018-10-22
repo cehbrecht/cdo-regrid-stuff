@@ -5,6 +5,7 @@ channels:
   - defaults
 dependencies:
   - six
+  - nco
   - cdo
   - python-cdo
   - numpy

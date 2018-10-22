@@ -10,8 +10,7 @@ Holds the MockDRS class for handling DRS interactions.
 import os
 import logging
 
-log = logging.getLogger(__name__)
-log.setLevel(logging.WARN)
+log = logging.getLogger('REGRIDDER')
 
 
 class MockDRS(object):
@@ -106,18 +105,3 @@ class MockDRS(object):
             resp[key] = getattr(self, key, None)
 
         return str(resp)
-
-
-if __name__ == "__main__":
-
-    m = MockDRS("/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/v20120928/ta/ta_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc")
-    for i in  m.asIter(): print i
-
-    m2 = MockDRS("/some/output/dir/cmip5.output1.MOHC.HadCM3.historical.day.atmos.day.r2i2p2.v20101010.ta.190001-191012.subset.nc")
-    print m2.asDict()
-
-    try:
-        MockDRS("/badc/cmip5/data/cmip5/output1/MPI-M/MPI-ESM-P/piControl/fx/atmos/fx/r0i0p0/latest/orog/orog_fx_MPI-ESM-P_piControl_r0i0p0.nc")
-        m_bad = MockDRS("/badc/cmip5/data/cmip5/output1/MPI-M/MPI-ESM-P/piControl/fx/atmos/fx/r0i0p0/latest/orog/orog_fx_MPI-ESM-P_piControl_r0i0p0.nc")
-    except:
-        print "MockDRS cannot handle: fx files!"

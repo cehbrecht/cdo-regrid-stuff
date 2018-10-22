@@ -21,7 +21,7 @@ import logging
 LOGGER = logging.getLogger('REGRIDDER')
 
 
-def regrid(input_file, domain_type, output_base_dir='OUT'):
+def regrid(input_file, domain_type, output_base_dir='OUT', archive_base=None):
     # Define some rules regarding the inputs and how they map to information needed by this process
     if domain_type == "global":
         grid_definition_file = os.path.join(RESOURCE_DIR, 'grid_files', 'll1deg_grid.nc')
@@ -48,7 +48,7 @@ def regrid(input_file, domain_type, output_base_dir='OUT'):
     operation = '-select,name={}'.format(var_id)
 
     # Get the variable (in external file) that contains the grid cell area variable
-    cell_areas_file = get_grid_cell_area_variable(var_id, input_file)
+    cell_areas_file = get_grid_cell_area_variable(var_id, input_file, archive_base=archive_base)
     if cell_areas_file:
         operation += " -setgridarea,{}".format(cell_areas_file)
     if domain_type == "global":
@@ -93,14 +93,14 @@ def validate_regridded_file(input_file, domain_type):
         LOGGER.warn("NOT CHECKING OUTPUT GRID for REGIONAL DATA")
 
 
-def map_to_drs(file_path, archive_base):
+def map_to_drs(file_path, archive_base=None):
     """
     Maps a file to a MockDRS object - which is returned.
     """
     return MockDRS(file_path, archive_base=archive_base)
 
 
-def get_grid_cell_area_variable(var_id, path):
+def get_grid_cell_area_variable(var_id, path, archive_base=None):
     """
     Looks in the file ``path`` to find the file that contains
     the grid cell areas.
@@ -122,7 +122,7 @@ def get_grid_cell_area_variable(var_id, path):
         LOGGER.warn("Could not locate grid cell area file for '{}' in file '{}'.".format(var_id, path))
         return None
 
-    d = map_to_drs(path)
+    d = map_to_drs(path, archive_base=archive_base)
     cell_areas_file = os.path.join(
         d.ARCHIVE_BASE, d.activity, d.product, d.institute,
         d.model, d.experiment, "fx", d.modeling_realm, "fx", "r0i0p0",

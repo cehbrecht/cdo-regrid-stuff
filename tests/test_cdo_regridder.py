@@ -8,6 +8,11 @@ def test_validate_input_grid():
     regridder.validate_input_grid(CORDEX_NC)
 
 
+def test_validate_regridded_file():
+    regridder.validate_regridded_file(CORDEX_NC, 'regional')
+    # regridder.validate_regridded_file(CMIP5_NC, 'global')
+
+
 def test_regrid():
     regridder.regrid(CORDEX_NC, 'regional')
     # regrid(CMIP5_NC, 'global')

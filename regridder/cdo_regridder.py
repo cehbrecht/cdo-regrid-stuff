@@ -89,7 +89,7 @@ def validate_regridded_file(input_file, domain_type):
         if "points=64800 (360x180)" not in sinfo:
             raise Exception("Output grid not correct for: {}".format(input_file))
     else:
-        print("NOT CHECKING OUTPUT GRID for REGIONAL DATA")
+        LOGGER.warn("NOT CHECKING OUTPUT GRID for REGIONAL DATA")
 
 
 def _mapToDRS(file_path):

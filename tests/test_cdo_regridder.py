@@ -11,12 +11,11 @@ def test_validate_input_grid():
 
 def test_validate_regridded_file_coredex():
     regridder.validate_regridded_file(CORDEX_NC, 'regional')
-    # regridder.validate_regridded_file(CMIP5_NC, 'global')
 
 
+@pytest.mark.skip(reason='not working')
 def test_validate_regridded_file_cmip5():
-    # regridder.validate_regridded_file(CMIP5_NC, 'global')
-    pass
+    regridder.validate_regridded_file(CMIP5_NC, 'global')
 
 
 def test_map_to_drs_cmip5():

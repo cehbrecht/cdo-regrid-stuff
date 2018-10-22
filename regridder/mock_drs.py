@@ -12,7 +12,7 @@ import logging
 
 log = logging.getLogger('REGRIDDER')
 
-DEFAULT_ARCHIVE_BASE = "/badc/cmip5/data"
+DEFAULT_ARCHIVE_BASE = "/opt/data"
 
 
 class MockDRS(object):

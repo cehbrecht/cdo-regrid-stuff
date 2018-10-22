@@ -2,10 +2,10 @@
 name: cdo_regrid
 channels:
   - conda-forge
-  - defaults
 dependencies:
   - six
   - nco
+  - pynco
   - cdo
   - python-cdo
   - numpy

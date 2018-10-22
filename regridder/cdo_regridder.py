@@ -15,6 +15,8 @@ nco = Nco()
 from regridder.mock_drs import MockDRS
 import cdms2 as cdms
 
+RESOURCE_DIR = os.path.dirname(os.path.abspath(os.path.join(__file__, '..')))
+
 import logging
 LOGGER = logging.getLogger('REGRIDDER')
 
@@ -22,13 +24,13 @@ LOGGER = logging.getLogger('REGRIDDER')
 def regrid(input_file, domain_type, output_base_dir='OUT'):
     # Define some rules regarding the inputs and how they map to information needed by this process
     if domain_type == "global":
-        grid_definition_file = "./grid_files/ll1deg_grid.nc"
-        grid_short_name = "1-deg"
+        grid_definition_file = os.path.join(RESOURCE_DIR, 'grid_files', 'll1deg_grid.nc')
+        # grid_short_name = "1-deg"
         output_dir = os.path.join(output_base_dir, "1_deg")
     else:
         regional_domain = os.path.basename(input_file).split("_")[1]
-        grid_definition_file = "./grid_files/ll0.5deg_%s.nc" % regional_domain
-        grid_short_name = "0.5-deg"
+        grid_definition_file = os.path.join(RESOURCE_DIR, 'grid_files', 'll0.5deg_{}.nc'.format(regional_domain))
+        # grid_short_name = "0.5-deg"
         output_dir = os.path.join(output_base_dir, "0.5_deg")
 
     if not os.path.isdir(output_dir):
@@ -38,26 +40,25 @@ def regrid(input_file, domain_type, output_base_dir='OUT'):
     validate_input_grid(input_file)
 
     # Determine output file name
-    output_file_name = os.path.split(input_file)[1]
-    output_file = os.path.join(output_dir, output_file_name)
+    output_file = os.path.join(output_dir, os.path.basename(input_file))
 
     # We will need to select the main variable using the "select" operator piped into the CDO operator
     var_id = os.path.basename(input_file).split("_")[0]
     options = "-b F64"
+    operation = '-select,name={}'.format(var_id)
 
     # Get the variable (in external file) that contains the grid cell area variable
-    cell_areas_file = _getGridCellAreaVariable(var_id, input_file)
-
+    cell_areas_file = get_grid_cell_area_variable(var_id, input_file)
     if cell_areas_file:
-        # operation += " -setgridarea,%s" % cell_areas_file
-        cdo.setgridarea(cell_areas_file, input=input_file, output='/tmp/out_gridarea.nc')
-        input_file = '/tmp/out_gridarea.nc'
-    cdo.select('name={}'.format(var_id), input=input_file, output='/tmp/out_select.nc', options=options)
+        operation += " -setgridarea,{}".format(cell_areas_file)
     if domain_type == "global":
-        cdo.remapbil(grid_definition_file, input='/tmp/out_select.nc', output='/tmp/out_remap.nc', options=options)
-        cdo.setgridtype(input='/tmp/out_remap.nc', output=output_file, options=options)
+        operation = '-remapbil,{} {}'.format(grid_definition_file, operation)
+        cdo.setgridtype('lonlat', input="{} {}".format(operation, input_file),
+                        output=output_file, options=options)
     else:
-        cdo.remapbil(grid_definition_file, input='/tmp/out_select.nc', output=output_file, options=options)
+        cdo.remapbil(grid_definition_file,
+                     input="{} {}".format(operation, input_file),
+                     output=output_file, options=options)
 
     validate_regridded_file(output_file, domain_type)
 
@@ -66,7 +67,7 @@ def regrid(input_file, domain_type, output_base_dir='OUT'):
         tmp_file = output_file[:-3] + "-tmp.nc"
         nco.ncks(input=output_file, output=tmp_file, options=['-3'])
         shutil.move(tmp_file, output_file)
-        print("Converted to NetCDF3 file: %s" % output_file)
+        LOGGER.debug("Converted to NetCDF3 file: {}".format(output_file))
 
     return output_file
 
@@ -99,7 +100,7 @@ def map_to_drs(file_path):
     return MockDRS(file_path)
 
 
-def _getGridCellAreaVariable(var_id, path):
+def get_grid_cell_area_variable(var_id, path):
     """
     Looks in the file ``path`` to find the file that contains
     the grid cell areas.
@@ -109,7 +110,7 @@ def _getGridCellAreaVariable(var_id, path):
     LOGGER.debug("Path: {}".format(path))
     f = cdms.open(path)
     if var_id not in f.listvariables():
-        raise Exception("Cannot find variable '%s' in file '%s'." % (var_id, path))
+        raise Exception("Cannot find variable '{}' in file '{}'.".format(var_id, path))
 
     v = f[var_id]
     f.close()
@@ -118,7 +119,7 @@ def _getGridCellAreaVariable(var_id, path):
         acm = re.search("area:\s*(\w+)\s", v.cell_measures).groups()[0]
         acm_file_name = re.search("%s:\s*(%s_.+?\.nc)" % (acm, acm), v.associated_files).groups()[0]
     except Exception:
-        print("Could not locate grid cell area file for '%s' in file '%s'." % (var_id, path))
+        LOGGER.warn("Could not locate grid cell area file for '{}' in file '{}'.".format(var_id, path))
         return None
 
     d = map_to_drs(path)
@@ -128,7 +129,7 @@ def _getGridCellAreaVariable(var_id, path):
         "latest", acm, acm_file_name)
 
     if not os.path.isfile(cell_areas_file):
-        print("Cell areas file not found at: %s" % cell_areas_file)
+        LOGGER.warn("Cell areas file not found at: {}".format(cell_areas_file))
         return None
 
     return cell_areas_file

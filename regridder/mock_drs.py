@@ -12,12 +12,13 @@ import logging
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.WARN)
-        
+
+
 class MockDRS(object):
     "A simple object to hold a DRS structure mapping."
 
-    __slots__ = ["activity", "product", "institute", "model", "experiment", "frequency", 
-                 "modeling_realm", "MIP_table", "ensemble_member", "version_number", "variable_name", 
+    __slots__ = ["activity", "product", "institute", "model", "experiment", "frequency",
+                 "modeling_realm", "MIP_table", "ensemble_member", "version_number", "variable_name",
                  "time_range", "extension"]
 
     ARCHIVE_BASE = "/badc/cmip5/data"
@@ -35,28 +36,30 @@ class MockDRS(object):
             items = dr.replace(self.ARCHIVE_BASE, "").strip("/").split("/")
 
             if len(items) != len(allowed) - 1:
-                raise Exception("Incorrect number of items in analysed DRS: required are: %s; Found are: %s" % (str(allowed[:-1]), str(items))) 
+                raise Exception("Incorrect number of items in analysed DRS: required are: {}; Found are: {}".format(
+                    allowed[:-1], items))
 
             # Now populate this object with keys from DRS
             for (i, key) in enumerate(allowed[:-1]):
-                 try:
-                     setattr(self, key, items[i])
-                 except:
-                     raise KeyError("Cannot identify section '%s' in file path." % key)
+                try:
+                    setattr(self, key, items[i])
+                except Exception:
+                    raise KeyError("Cannot identify section '%s' in file path." % key)
 
             # Now validate file name and directory use the same DRS values
             fname_dict = self._splitFileName(fn)
 
             for key in ("variable_name", "MIP_table", "model", "experiment", "ensemble_member"):
                 if fname_dict[key] != getattr(self, key):
-                    raise ValueError("DRS component in path does not match DRS component in file name: '%s' != '%s'." % (fname_dict[key], getattr(self, key)))
+                    raise ValueError("DRS component in path does not match DRS component in file name: '{}' != '{}'.".format(  # noqa
+                        fname_dict[key], getattr(self, key)))
 
             # Add some properties from file name
             for key in ("time_range", "extension"):
                 try:
                     setattr(self, key, fname_dict[key])
-                except:
-                     raise KeyError("Cannot identify section '%s' in file path." % key)
+                except Exception:
+                    raise KeyError("Cannot identify section '%s' in file path." % key)
 
         # Or get from file only named after DRS structure
         else:
@@ -66,7 +69,6 @@ class MockDRS(object):
                 setattr(self, key, items[i])
 
             setattr(self, "extension", ".".join(items[(i + 1):]).strip("."))
-
 
     def _splitFileName(self, fname):
         """
@@ -88,7 +90,7 @@ class MockDRS(object):
         d["extension"] = d["extension"].strip("_")
         return d
 
-    def asString(self, sep = "."):
+    def asString(self, sep="."):
         return sep.join([getattr(self, key) for key in self.__slots__]).strip(sep)
 
     def asDict(self):
@@ -119,6 +121,3 @@ if __name__ == "__main__":
         m_bad = MockDRS("/badc/cmip5/data/cmip5/output1/MPI-M/MPI-ESM-P/piControl/fx/atmos/fx/r0i0p0/latest/orog/orog_fx_MPI-ESM-P_piControl_r0i0p0.nc")
     except:
         print "MockDRS cannot handle: fx files!"
-
-    
-

@@ -7,8 +7,6 @@ import shutil
 import shlex
 import tempfile
 
-import logging
-
 # Third-party imports
 import numpy
 

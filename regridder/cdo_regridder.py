@@ -16,7 +16,7 @@ import cdms2 as cdms
 
 
 # Define CDO path
-cdo_path = "/usr/bin/cdo"
+cdo_path = "cdo"
 
 
 def _validate_input_grid(input_file):
@@ -80,7 +80,7 @@ def regrid(input_file, domain_type, output_base_dir='OUT'):
     if domain_type == "regional":
         # Convert to NetCDF 3
         tmp_file = output_file[:-3] + "-tmp.nc"
-        os.system("/usr/bin/ncks -3 %s %s" % (output_file, tmp_file))
+        os.system("ncks -3 %s %s" % (output_file, tmp_file))
         os.system("mv %s %s" % (tmp_file, output_file))
         print("Converted to NetCDF3 file: %s" % output_file)
 

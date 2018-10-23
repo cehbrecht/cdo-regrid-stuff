@@ -7,6 +7,10 @@ cdo = Cdo()
 
 from regridder import util
 
+# domain types
+GLOBAL = 'global'
+REGIONAL = 'regional'
+
 RESOURCE_DIR = os.path.dirname(os.path.abspath(os.path.join(__file__, '..')))
 
 import logging
@@ -33,7 +37,7 @@ def regrid(input_file, domain_type, output_base_dir='OUT', archive_base=None):
     cell_areas_file = util.get_grid_cell_area_variable(var_id, input_file, archive_base=archive_base)
     if cell_areas_file:
         operation += " -setgridarea,{}".format(cell_areas_file)
-    if domain_type == "global":
+    if domain_type == GLOBAL:
         operation = '-remapbil,{} {}'.format(grid_definition_file, operation)
         cdo.setgridtype('lonlat', input="{} {}".format(operation, input_file),
                         output=output_file, options=options)
@@ -44,14 +48,14 @@ def regrid(input_file, domain_type, output_base_dir='OUT', archive_base=None):
 
     validate_regridded_file(output_file, domain_type)
 
-    if domain_type == "regional":
+    if domain_type == REGIONAL:
         util.convert_to_netcdf3(output_file)
 
     return output_file
 
 
 def create_output_dir(output_base_dir, domain_type=None):
-    if domain_type == "global":
+    if domain_type == GLOBAL:
         grid_short_name = "1_deg"
     else:
         grid_short_name = "0.5_deg"
@@ -62,7 +66,7 @@ def create_output_dir(output_base_dir, domain_type=None):
 
 
 def get_grid_definition_file(input_file, domain_type=None):
-    if domain_type == "global":
+    if domain_type == GLOBAL:
         grid_definition_file = os.path.join(RESOURCE_DIR, 'grid_files', 'll1deg_grid.nc')
     else:
         regional_domain = os.path.basename(input_file).split("_")[1]
@@ -84,7 +88,7 @@ def validate_input_grid(input_file):
 def validate_regridded_file(input_file, domain_type):
     sinfo = cdo.sinfo(input=input_file)
 
-    if domain_type == "global":
+    if domain_type == GLOBAL:
         if "points=64800 (360x180)" not in sinfo:
             raise Exception("Output grid not correct for: {}".format(input_file))
     else:

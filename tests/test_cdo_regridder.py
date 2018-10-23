@@ -10,6 +10,11 @@ def test_create_output_dir():
     assert regridder.create_output_dir('/tmp/out', domain_type='regional') == '/tmp/out/0.5_deg'
 
 
+def test_get_grid_definition_file():
+    assert 'grid_files/ll1deg_grid.nc' in regridder.get_grid_definition_file(CMIP5_NC, domain_type='global')
+    assert 'grid_files/ll0.5deg_AFR-44i.nc' in regridder.get_grid_definition_file(CORDEX_NC, domain_type='regional')
+
+
 def test_validate_input_grid():
     regridder.validate_input_grid(CORDEX_NC)
 

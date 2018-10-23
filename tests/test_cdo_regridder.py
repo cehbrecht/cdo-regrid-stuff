@@ -5,6 +5,11 @@ from regridder import cdo_regridder as regridder
 from .common import CMIP5_NC, CORDEX_NC, ARCHIVE_BASE
 
 
+def test_create_output_dir():
+    assert regridder.create_output_dir('/tmp/out', domain_type='global') == '/tmp/out/1_deg'
+    assert regridder.create_output_dir('/tmp/out', domain_type='regional') == '/tmp/out/0.5_deg'
+
+
 def test_validate_input_grid():
     regridder.validate_input_grid(CORDEX_NC)
 

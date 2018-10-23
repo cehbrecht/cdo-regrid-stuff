@@ -5,6 +5,11 @@ from regridder import util
 from .common import CORDEX_NC, CMIP5_NC, ARCHIVE_BASE
 
 
+def test_get_variable_name():
+    assert util.get_variable_name(CORDEX_NC) == 'tasmin'
+    assert util.get_variable_name(CMIP5_NC) == 'tas'
+
+
 def test_convert_to_netcdf3():
     assert util.convert_to_netcdf3(CORDEX_NC, output_file='/tmp/test.nc') == '/tmp/test.nc'
 

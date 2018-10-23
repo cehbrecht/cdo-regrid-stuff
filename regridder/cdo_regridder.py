@@ -25,7 +25,7 @@ def regrid(input_file, domain_type, output_base_dir='OUT', archive_base=None):
     output_file = os.path.join(output_dir, os.path.basename(input_file))
 
     # We will need to select the main variable using the "select" operator piped into the CDO operator
-    var_id = os.path.basename(input_file).split("_")[0]
+    var_id = util.get_variable_name(input_file)
     options = "-b F64"
     operation = '-select,name={}'.format(var_id)
 

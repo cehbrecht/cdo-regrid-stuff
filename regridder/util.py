@@ -13,6 +13,10 @@ import logging
 LOGGER = logging.getLogger('REGRIDDER')
 
 
+def get_variable_name(input_file):
+    return os.path.basename(input_file).split("_")[0]
+
+
 def convert_to_netcdf3(input_file, output_file=None):
     output_file = output_file or input_file
     tmp_file = input_file[:-3] + "-tmp.nc"

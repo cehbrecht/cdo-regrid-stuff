@@ -11,10 +11,8 @@ from netCDF4 import Dataset
 from cdo import Cdo
 cdo = Cdo()
 
-from nco import Nco
-nco = Nco()
-
 from regridder.mock_drs import MockDRS
+from regridder import util
 
 RESOURCE_DIR = os.path.dirname(os.path.abspath(os.path.join(__file__, '..')))
 
@@ -64,11 +62,7 @@ def regrid(input_file, domain_type, output_base_dir='OUT', archive_base=None):
     validate_regridded_file(output_file, domain_type)
 
     if domain_type == "regional":
-        # Convert to NetCDF 3
-        tmp_file = output_file[:-3] + "-tmp.nc"
-        nco.ncks(input=output_file, output=tmp_file, options=['-3'])
-        shutil.move(tmp_file, output_file)
-        LOGGER.debug("Converted to NetCDF3 file: {}".format(output_file))
+        util.convert_to_netcdf3(output_file)
 
     return output_file
 

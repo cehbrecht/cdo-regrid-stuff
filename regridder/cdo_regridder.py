@@ -1,17 +1,10 @@
-# Standard library imports
-import time
-import re
 import os
-import shutil
-import shlex
 import tempfile
 
-from netCDF4 import Dataset
 
 from cdo import Cdo
 cdo = Cdo()
 
-from regridder.mock_drs import MockDRS
 from regridder import util
 
 RESOURCE_DIR = os.path.dirname(os.path.abspath(os.path.join(__file__, '..')))
@@ -47,7 +40,7 @@ def regrid(input_file, domain_type, output_base_dir='OUT', archive_base=None):
     operation = '-select,name={}'.format(var_id)
 
     # Get the variable (in external file) that contains the grid cell area variable
-    cell_areas_file = get_grid_cell_area_variable(var_id, input_file, archive_base=archive_base)
+    cell_areas_file = util.get_grid_cell_area_variable(var_id, input_file, archive_base=archive_base)
     if cell_areas_file:
         operation += " -setgridarea,{}".format(cell_areas_file)
     if domain_type == "global":
@@ -86,43 +79,3 @@ def validate_regridded_file(input_file, domain_type):
             raise Exception("Output grid not correct for: {}".format(input_file))
     else:
         LOGGER.warn("NOT CHECKING OUTPUT GRID for REGIONAL DATA")
-
-
-def map_to_drs(file_path, archive_base=None):
-    """
-    Maps a file to a MockDRS object - which is returned.
-    """
-    return MockDRS(file_path, archive_base=archive_base)
-
-
-def get_grid_cell_area_variable(var_id, path, archive_base=None):
-    """
-    Looks in the file ``path`` to find the file that contains
-    the grid cell areas.
-
-    Returns None if cannot find file.
-    """
-    LOGGER.debug("Path: {}".format(path))
-    ds = Dataset(path)
-    if var_id not in ds.variables.keys():
-        raise Exception("Cannot find variable '{}' in file '{}'.".format(var_id, path))
-    v = ds.variables[var_id]
-
-    try:
-        acm = re.search("area:\s*(\w+)\s*", v.cell_measures).groups()[0]
-        acm_file_name = re.search("{}:\s*({}_.+?\.nc)".format(acm, acm), v.associated_files).groups()[0]
-    except Exception:
-        LOGGER.warn("Could not locate grid cell area file for '{}' in file '{}'.".format(var_id, path))
-        return None
-
-    d = map_to_drs(path, archive_base=archive_base)
-    cell_areas_file = os.path.join(
-        archive_base, d.activity, d.product, d.institute,
-        d.model, d.experiment, "fx", d.modeling_realm, "fx", "r0i0p0",
-        "latest", acm, acm_file_name)
-
-    if not os.path.isfile(cell_areas_file):
-        LOGGER.warn("Cell areas file not found at: {}".format(cell_areas_file))
-        return None
-
-    return cell_areas_file

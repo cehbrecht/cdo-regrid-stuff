@@ -15,18 +15,8 @@ LOGGER = logging.getLogger('REGRIDDER')
 
 def regrid(input_file, domain_type, output_base_dir='OUT', archive_base=None):
     # Define some rules regarding the inputs and how they map to information needed by this process
-    if domain_type == "global":
-        grid_definition_file = os.path.join(RESOURCE_DIR, 'grid_files', 'll1deg_grid.nc')
-        # grid_short_name = "1-deg"
-        output_dir = os.path.join(output_base_dir, "1_deg")
-    else:
-        regional_domain = os.path.basename(input_file).split("_")[1]
-        grid_definition_file = os.path.join(RESOURCE_DIR, 'grid_files', 'll0.5deg_{}.nc'.format(regional_domain))
-        # grid_short_name = "0.5-deg"
-        output_dir = os.path.join(output_base_dir, "0.5_deg")
-
-    if not os.path.isdir(output_dir):
-        os.makedirs(output_dir)
+    output_dir = create_output_dir(output_base_dir, domain_type)
+    grid_definition_file = get_grid_definition_file(input_file, domain_type)
 
     # Validate input grid first - check CDO can manage it
     validate_input_grid(input_file)
@@ -58,6 +48,26 @@ def regrid(input_file, domain_type, output_base_dir='OUT', archive_base=None):
         util.convert_to_netcdf3(output_file)
 
     return output_file
+
+
+def create_output_dir(output_base_dir, domain_type=None):
+    if domain_type == "global":
+        grid_short_name = "1_deg"
+    else:
+        grid_short_name = "0.5_deg"
+    output_dir = os.path.join(output_base_dir, grid_short_name)
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
+    return output_dir
+
+
+def get_grid_definition_file(input_file, domain_type=None):
+    if domain_type == "global":
+        grid_definition_file = os.path.join(RESOURCE_DIR, 'grid_files', 'll1deg_grid.nc')
+    else:
+        regional_domain = os.path.basename(input_file).split("_")[1]
+        grid_definition_file = os.path.join(RESOURCE_DIR, 'grid_files', 'll0.5deg_{}.nc'.format(regional_domain))
+    return grid_definition_file
 
 
 def validate_input_grid(input_file):
